@@ -6,15 +6,13 @@ from os import getenv
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from dotenv import load_dotenv
-from keyboards import router
-
-
-load_dotenv()
-TOKEN = getenv("BOT_TOKEN")
+from menu import router as menu_router
+from booking import router as booking_router
+from config import BOT_TOKEN as TOKEN
 
 dp = Dispatcher()
-dp.include_router(router)
+dp.include_router(menu_router)
+dp.include_router(booking_router)
 
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
