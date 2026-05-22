@@ -2,9 +2,14 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import Message
 from aiogram import Router
 from aiogram import F
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram.fsm.state import State, StatesGroup
+from database import get_all_books
+from os import getenv
+from dotenv import load_dotenv
 
+load_dotenv()
+ADMIN_ID = int(getenv("ADMIN_ID"))
 
 router = Router(name="new rout")
 class Form(StatesGroup):
@@ -59,5 +64,24 @@ async def back(callback):
     builder.button(text="Контакты", callback_data="contacts")
     builder.adjust(2, 2)
     await callback.message.edit_text("Выберите действие", reply_markup=builder.as_markup())
+
+@router.message(Command("bookings"))
+async def show_all_books(message: Message):
+    if message.from_user.id != ADMIN_ID:
+        await message.answer("У вас нет прав для этой команды")
+        return
+
+    rows = await get_all_books()
+    if not rows:
+        await message.answer("Записей пока нет")
+        return
+
+    text = "Список всех записей:\n\n"
+    for row in rows:
+        text += f"{row['name']} - {row['service']}, {row['time']}\n"
+    await message.answer(text)
+
+
+
 
 
