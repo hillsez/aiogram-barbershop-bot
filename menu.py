@@ -27,6 +27,8 @@ async def show_keyboard(message: Message) -> None:
     builder.adjust(2,2)
     await message.reply(f"Привет, {message.from_user.full_name}, это барбершоп БОРОДА!", reply_markup=builder.as_markup())
 
+
+
 @router.callback_query(F.data == "price")
 async def show_price(callback):
     await callback.answer()

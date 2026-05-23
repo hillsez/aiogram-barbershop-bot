@@ -16,12 +16,20 @@ class Form(StatesGroup):
     name = State()
     service = State()
     time = State()
+    confirm = State()
 
 def get_time_keyboard():
     builder = InlineKeyboardBuilder()
     slots = ["9:00", "11:00", "13:00", "15:00", "17:00", "19:00"]
     for slot in slots:
         builder.button(text=slot, callback_data=f"time:{slot}")
+    builder.adjust(2)
+    return builder.as_markup()
+
+def get_confirm_keyboard():
+    builder = InlineKeyboardBuilder()
+    builder.button(text="Да", callback_data="yes")
+    builder.button(text="Нет", callback_data="no")
     builder.adjust(2)
     return builder.as_markup()
 
@@ -83,25 +91,40 @@ async def process_time(callback, state: FSMContext) -> None:
     await callback.answer()
     slot = callback.data.split(":", 1)[1]
     data = await state.update_data(time=slot)
-    await state.clear()
-    await show_summary(message=callback.message, data=data)
-    await text_for_admin(message=callback.message, data=data)
+    await state.set_state(Form.confirm)
+    await callback.message.edit_text(text=f"Вы уверены, что привильно выбрали время - {slot}?", reply_markup=get_confirm_keyboard())
 
-async def show_summary(message: Message, data: dict[str, Any]) -> None:
+@router.callback_query(Form.confirm, F.data == "yes")
+async def process_confirm(callback, state: FSMContext) -> None:
+    await callback.answer()
+    data = await state.get_data()
+    await state.clear()
+    await show_summary(callback, data=data)
+    await text_for_admin(callback, data=data)
+
+@router.callback_query(Form.confirm, F.data == "no")
+async def process_confirm_2(callback, state: FSMContext) -> None:
+    await callback.answer()
+    await state.set_state(Form.time)
+    await callback.message.edit_text(text="Выберите время:", reply_markup=get_time_keyboard())
+
+async def show_summary(callback, data: dict[str, Any]) -> None:
     name = data['name']
     service = data['service']
     time = data['time']
     text = f"{name}, Вы записаны на {service} {time}. Ждем Вас!"
-    await save_booking(name, service, time, message.from_user.id)
-    await message.answer(text=text, reply_markup=ReplyKeyboardRemove())
+    await save_booking(name, service, time, callback.from_user.id)
+    await callback.message.answer(text=text)
 
-async def text_for_admin(message: Message, data: dict[str, Any]) -> None:
+async def text_for_admin(callback, data: dict[str, Any]) -> None:
     text_admin = (
         f"Новая запись!\n\n"
         f"Имя: {data['name']}\n"
         f"Услуга: {data['service']}\n"
         f"Время: {data['time']}\n"
-        f"От: @{message.from_user.username}"
+        f"От: @{callback.from_user.username}"
     )
-    await message.bot.send_message(ADMIN_ID, text_admin)
+    await callback.bot.send_message(ADMIN_ID, text_admin)
+
+
 
