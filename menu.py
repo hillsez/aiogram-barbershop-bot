@@ -7,6 +7,7 @@ from aiogram.fsm.state import State, StatesGroup
 from database import get_all_books
 from os import getenv
 from dotenv import load_dotenv
+from database import reset_all_books
 
 load_dotenv()
 ADMIN_ID = int(getenv("ADMIN_ID"))
@@ -82,6 +83,15 @@ async def show_all_books(message: Message):
     for row in rows:
         text += f"{row['name']} - {row['service']}, {row['time']}\n"
     await message.answer(text)
+
+@router.message(Command("reset"))
+async def reset_all_bookings(message: Message):
+    if message.from_user.id != ADMIN_ID:
+        await message.answer("У вас нет прав для этой команды")
+        return
+    await reset_all_books()
+    await message.answer("Все записи очищены. Все слоты свободны!")
+
 
 
 

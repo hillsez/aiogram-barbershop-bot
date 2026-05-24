@@ -27,3 +27,17 @@ async def get_all_books():
         async with db.execute("SELECT * FROM bookings") as cursor:
             rows = await cursor.fetchall()
             return rows
+
+async def get_busy_slots():
+    async with aiosqlite.connect("bookings.db") as db:
+        async with db.execute("SELECT time FROM bookings") as cursor:
+            slots = await cursor.fetchall()
+            slots = [slot[0] for slot in slots]
+            return slots
+
+async def reset_all_books():
+    async with aiosqlite.connect("bookings.db") as db:
+        await db.execute("DELETE FROM bookings")
+        await db.commit()
+
+

@@ -2,15 +2,13 @@ from aiogram.types import Message
 from aiogram import Router, F
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
-from aiogram.types import ReplyKeyboardRemove
 from typing import Any
 from config import ADMIN_ID
 from database import save_booking
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from dotenv import load_dotenv
+from database import get_busy_slots
 
 router = Router(name="booking router")
-
 
 class Form(StatesGroup):
     name = State()
@@ -18,11 +16,12 @@ class Form(StatesGroup):
     time = State()
     confirm = State()
 
-def get_time_keyboard():
+def get_time_keyboard(busy_slots):
     builder = InlineKeyboardBuilder()
     slots = ["9:00", "11:00", "13:00", "15:00", "17:00", "19:00"]
     for slot in slots:
-        builder.button(text=slot, callback_data=f"time:{slot}")
+        if slot not in busy_slots:
+            builder.button(text=slot, callback_data=f"time:{slot}")
     builder.adjust(2)
     return builder.as_markup()
 
@@ -56,31 +55,56 @@ async def process_name(message: Message, state: FSMContext) -> None:
 async def process_service_1(message: Message, state: FSMContext) -> None:
     await state.update_data(service="Стрижка волос")
     await state.set_state(Form.time)
-    await message.answer(f"Вы выбрали услугу Стрижка волос, на какую дату и время Вы хотите записаться?", reply_markup=get_time_keyboard())
+    busy = await get_busy_slots()
+    if len(busy) == 6:
+        await message.answer("К сожалению все слоты на запись заняты, приходите к нам завтра!")
+        await state.clear()
+    else:
+        await message.answer(f"Вы выбрали услугу Стрижка волос, на какую дату и время Вы хотите записаться?", reply_markup=get_time_keyboard(busy))
 
 @router.message(Form.service, F.text.casefold() == "2")
 async def process_service_2(message: Message, state: FSMContext) -> None:
     await state.update_data(service="Окрашивание")
     await state.set_state(Form.time)
-    await message.answer(f"Вы выбрали услугу Окрашивание, на какую дату и время Вы хотите записаться?", reply_markup=get_time_keyboard())
+    busy = await get_busy_slots()
+    if len(busy) == 6:
+        await message.answer("К сожалению все слоты на запись заняты, приходите к нам завтра!")
+        await state.clear()
+    else:
+        await message.answer(f"Вы выбрали услугу Окрашивание, на какую дату и время Вы хотите записаться?", reply_markup=get_time_keyboard(busy))
 
 @router.message(Form.service, F.text.casefold() == "3")
 async def process_service_3(message: Message, state: FSMContext) -> None:
     await state.update_data(service="Стрижка + борода")
     await state.set_state(Form.time)
-    await message.answer(f"Вы выбрали услугу Стрижка + борода, на какую дату и время Вы хотите записаться?", reply_markup=get_time_keyboard())
+    busy = await get_busy_slots()
+    if len(busy) == 6:
+        await message.answer("К сожалению все слоты на запись заняты, приходите к нам завтра!")
+        await state.clear()
+    else:
+        await message.answer(f"Вы выбрали услугу Стрижка + борода, на какую дату и время Вы хотите записаться?", reply_markup=get_time_keyboard(busy))
 
 @router.message(Form.service, F.text.casefold() == "4")
 async def process_service_4(message: Message, state: FSMContext) -> None:
     await state.update_data(service="Укладка волос")
     await state.set_state(Form.time)
-    await message.answer(f"Вы выбрали услугу Укладка волос, на какую дату и время Вы хотите записаться?", reply_markup=get_time_keyboard())
+    busy = await get_busy_slots()
+    if len(busy) == 6:
+        await message.answer("К сожалению все слоты на запись заняты, приходите к нам завтра!")
+        await state.clear()
+    else:
+        await message.answer(f"Вы выбрали услугу Укладка волос, на какую дату и время Вы хотите записаться?", reply_markup=get_time_keyboard(busy))
 
 @router.message(Form.service, F.text.casefold() == "5")
 async def process_service_5(message: Message, state: FSMContext) -> None:
     await state.update_data(service="Био-завивка")
     await state.set_state(Form.time)
-    await message.answer(f"Вы выбрали услугу Био-завивка, на какую дату и время Вы хотите записаться?", reply_markup=get_time_keyboard())
+    busy = await get_busy_slots()
+    if len(busy) == 6:
+        await message.answer("К сожалению все слоты на запись заняты, приходите к нам завтра!")
+        await state.clear()
+    else:
+        await message.answer(f"Вы выбрали услугу Био-завивка, на какую дату и время Вы хотите записаться?", reply_markup=get_time_keyboard(busy))
 
 @router.message(Form.service)
 async def process_service_6(message: Message) -> None:
